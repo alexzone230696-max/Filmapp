@@ -1,0 +1,194 @@
+<!doctype html>
+
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Генератор испанского пользователя</title>
+  <style>
+    body { font-family: Arial, Helvetica, sans-serif; padding: 20px; max-width: 760px; margin: auto; }
+    h1 { text-align:center; }
+    .card { border: 1px solid #ddd; padding: 16px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.03); }
+    .row { display:flex; gap:8px; margin:8px 0; flex-wrap:wrap; }
+    label { flex-basis: 100%; font-weight:600; margin-top:8px; }
+    .output { background:#f7f7f7; padding:10px; border-radius:6px; min-width:220px; }
+    button { padding:8px 12px; border-radius:6px; border:1px solid #888; background:#fff; cursor:pointer; }
+    button.primary { background:#007bff; color:white; border-color:#007bff; }
+    .small { font-size:0.9em; color:#555; }
+    pre { white-space:pre-wrap; word-wrap:break-word; margin:8px 0; }
+  </style>
+</head>
+<body>
+  <h1>Генератор испанского пользователя</h1>
+  <div class="card">
+    <div class="row">
+      <button id="genBtn" class="primary">Сгенерировать</button>
+      
+    </div><div class="row">
+  <div style="flex:1">
+    <label>Имя</label>
+    <div id="firstName" class="output"></div>
+
+    <label>Фамилия 1</label>
+    <div id="surname1" class="output"></div>
+
+    <label>Фамилия 2</label>
+    <div id="surname2" class="output"></div>
+
+    <label>DNI</label>
+    <div id="dni" class="output"></div>
+
+    <label>Email (Gmail)</label>
+    <div id="email" class="output"></div>
+
+    <label>Телефон (9 цифр)</label>
+    <div id="phone" class="output"></div>
+  </div>
+
+  <div style="flex:1">
+    <label>IBAN (Spain)</label>
+    <div id="iban" class="output"></div>
+
+    <label>Адрес (улица, номер, город)</label>
+    <div id="address" class="output"></div>
+
+    <label>Город</label>
+    <div id="city" class="output"></div>
+  </div>
+</div>
+
+<label>Полный профиль</label>
+<pre id="profile" class="small"></pre>
+
+  </div><script>
+/* =========== Данные (короткие списки) =========== */
+const maleNames = ["Alejandro","Sergio","Javier","Diego","Mateo","Carlos","Miguel","Antonio","Pablo","Luis"];
+const femaleNames = ["María","Lucía","Isabella","Elena","Carmen","Ana","Laura","Sofía","Marta","Lucia"];
+const surnames = ["Ruiz","Gómez","López","Martínez","Sánchez","Pérez","García","Fernández","Torres","Castillo","Navarro","Ramírez","Alonso","Moreno","Vargas"];
+const streetTypes = ["Calle","Avenida","Paseo","Plaza","Camino","Ronda","Carrer","Rúa"];
+const streetNames = ["Alcalá","Gran Vía","Santa Cruz","San Vicente","Constitución","Colón","Aragón","Juan Bravo","Mayor","Andalucía","Libertad","Olmo","Oliva","Real","Victoria"];
+const cities = [
+  {name:"Madrid", zipPrefix:"28"},
+  {name:"Barcelona", zipPrefix:"08"},
+  {name:"Sevilla", zipPrefix:"41"},
+  {name:"Valencia", zipPrefix:"46"},
+  {name:"Zaragoza", zipPrefix:"50"},
+  {name:"Granada", zipPrefix:"18"},
+  {name:"Málaga", zipPrefix:"29"},
+  {name:"Salamanca", zipPrefix:"37"}
+];
+
+/* =========== DNI =========== */
+const dniLetters = "TRWAGMYFPDXBNJZSQVHLCKE";
+function generateDNI() {
+  const num = Math.floor(Math.random() * 100000000);
+  const numStr = String(num).padStart(8,'0');
+  const index = num % 23;
+  const letter = dniLetters.charAt(index);
+  return numStr + letter;
+}
+
+/* =========== IBAN =========== */
+function randomDigits(len) {
+  let s = "";
+  for (let i=0;i<len;i++) s += String(Math.floor(Math.random()*10));
+  return s;
+}
+function computeIbanCheckDigits(bban, countryCode = 'ES') {
+  const countryNums = countryCode.split('').map(c => (c.charCodeAt(0) - 55)).join('');
+  const rearranged = bban + countryNums + "00";
+  let remainder = 0;
+  const chunkSize = 9;
+  for (let i = 0; i < rearranged.length; i += chunkSize) {
+    const chunk = String(remainder) + rearranged.substr(i, chunkSize);
+    remainder = parseInt(chunk, 10) % 97;
+  }
+  const check = 98 - remainder;
+  return String(check).padStart(2,'0');
+}
+function generateValidSpanishIBAN() {
+  const bank = randomDigits(4);
+  const branch = randomDigits(4);
+  const nationalCheck = randomDigits(2);
+  const account = randomDigits(10);
+  const bban = bank + branch + nationalCheck + account;
+  const checkDigits = computeIbanCheckDigits(bban, 'ES');
+  return "ES" + checkDigits + bban;
+}
+
+/* =========== Email =========== */
+function generateEmail(first, s1) {
+  const rand = Math.floor(Math.random()*900 + 100); // 100-999
+  const base = `${first.toLowerCase().replace(/[^a-z]/g,'')}.${s1.toLowerCase()}`;
+  return base + rand + "@gmail.com";
+}
+
+/* =========== Phone 9 digits =========== */
+function generatePhone() {
+  let p = "";
+  for (let i = 0; i < 9; i++) p += Math.floor(Math.random()*10);
+  return p;
+}
+
+/* =========== Address =========== */
+function generateAddress() {
+  const stType = streetTypes[Math.floor(Math.random() * streetTypes.length)];
+  const stName = streetNames[Math.floor(Math.random() * streetNames.length)];
+  const number = Math.floor(Math.random() * 200) + 1;
+  const apt = Math.random() < 0.5 ? (", Apt. " + (Math.floor(Math.random() * 50) + 1)) : "";
+  const cityObj = cities[Math.floor(Math.random() * cities.length)];
+  const zip = cityObj.zipPrefix + String(Math.floor(Math.random() * 100)).padStart(3,'0');
+  const full = `${stType} ${stName}, ${number}${apt}, ${cityObj.name} ${zip}`;
+  return {full, city: cityObj.name};
+}
+
+/* =========== Name picker =========== */
+function pickRandomName() {
+  const male = Math.random() < 0.5;
+  const first = male ? maleNames[Math.floor(Math.random() * maleNames.length)] : femaleNames[Math.floor(Math.random() * femaleNames.length)];
+  const s1 = surnames[Math.floor(Math.random() * surnames.length)];
+  let s2 = surnames[Math.floor(Math.random() * surnames.length)];
+  if (s1 === s2) {
+    const pool = surnames.filter(s => s !== s1);
+    s2 = pool[Math.floor(Math.random() * pool.length)];
+  }
+  return {first, s1, s2};
+}
+
+/* =========== Profile =========== */
+function generateProfile() {
+  const nameObj = pickRandomName();
+  const dniVal = generateDNI();
+  const ibanVal = generateValidSpanishIBAN();
+  const addrObj = generateAddress();
+  const emailVal = generateEmail(nameObj.first, nameObj.s1);
+  const phoneVal = generatePhone();
+
+  return {
+    firstName: nameObj.first,
+    surname1: nameObj.s1,
+    surname2: nameObj.s2,
+    dni: dniVal,
+    iban: ibanVal,
+    address: addrObj.full,
+    city: addrObj.city,
+    email: emailVal,
+    phone: phoneVal
+  };
+}
+
+/* =========== UI =========== */
+const firstNameEl = document.getElementById('firstName');
+const surname1El = document.getElementById('surname1');
+const surname2El = document.getElementById('surname2');
+const dniEl = document.getElementById('dni');
+const ibanEl = document.getElementById('iban');
+const addressEl = document.getElementById('address');
+const cityEl = document.getElementById('city');
+const profileEl = document.getElementById('profile');
+const emailEl = document.getElementById('email');
+const phoneEl = document.getElementById('phone');
+
+function renderProfile(p) {
+  firstNameEl.textContent = p.firstName;
+  surname1El.textContent = p.surname1;
